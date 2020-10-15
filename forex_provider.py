@@ -12,7 +12,7 @@ import random
 import fxp_bytes
 
 
-REQUEST_ADDRESS = ('localhost', 50403)
+REQUEST_ADDRESS = ('localhost', 63000)
 REQUEST_SIZE = 12
 REVERSE_QUOTED = {'GBP', 'EUR', 'AUD'}
 SUBSCRIPTION_TIME = 19  # 10 * 60  # seconds

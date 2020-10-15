@@ -5,7 +5,7 @@ import time
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 print(sock)
 
-server_address = ('localhost', 10000)
+server_address = ('localhost', 65010)
 for n in range(10_000):
     message = 'message {}'.format(n).encode('utf-8')
     print('sending {!r} (even if nobody is listening)'.format(message))

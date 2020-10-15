@@ -1,6 +1,6 @@
 import socket
 
-server_address = ('localhost', 10000)
+server_address = ('localhost', 65010)
 print('starting up on {} port {}'.format(*server_address))
 
 # Create a UDP socket
