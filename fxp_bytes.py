@@ -58,7 +58,6 @@ def serialize_utcdatetime(utc: datetime) -> bytes:
     epoch = datetime(1970, 1, 1)
     micros = (utc - epoch).total_seconds() * MICROS_PER_SECOND
     a = array('Q', [int(micros)])
-    print(a)
     a.byteswap()  # convert to big-endian
     return a.tobytes()
 

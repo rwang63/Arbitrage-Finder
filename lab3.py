@@ -20,13 +20,13 @@ class Lab3(object):
         data = None
         byte_stream = fxp_bytes_subscriber.serialize_address(self.address[0],
                                                              self.address[1])
-        self.listener.sendto(byte_stream, ('127,0,0,1', 63000))
+        self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
 
         while True:
             events = self.selector.select(next_timeout)
             for key, mask in events:
                 data = self.listener.recv(4096)
-            print(data)
+            print(fxp_bytes_subscriber.unmarshal_message(data))
 
     @staticmethod
     def start_a_server():

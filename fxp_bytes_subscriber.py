@@ -12,8 +12,8 @@ def serialize_address(ip: string, port: int) -> bytes:
 
     full_byte = ip_as_bytes + port_as_bytes
 
-    print(ip_as_bytes)
-    print(port_as_bytes)
+    # print(ip_as_bytes)
+    # print(port_as_bytes)
 
     return full_byte
 
