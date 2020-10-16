@@ -84,8 +84,11 @@ class Lab3(object):
                     curr1 = key[0:3]
                     curr2 = key[3:6]
                     del self.last_quoted[key]
-                    del self.graph[curr1][curr2]
-                    del self.graph[curr2][curr1]
+                    try:
+                        del self.graph[curr1][curr2]
+                        del self.graph[curr2][curr1]
+                    except KeyError as e:
+                        continue
                     print(
                         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
 
