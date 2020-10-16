@@ -32,16 +32,16 @@ def deserialize_utcdatetime(b: bytes) -> datetime:
     return deserialized_time
 
 
-def unmarshal_message(b: bytes):
-    unmarshalled_message = ''
+def unmarshal_message(b: bytes) -> list:
+    unmarshalled_message_list = []
     time = deserialize_utcdatetime(b[0:8])
     currencies = b[8:14].decode("utf-8")
     conversion = deserialize_price(b[14:22])
-    unmarshalled_message += str(time) + ' '
-    unmarshalled_message += currencies[0:3] + ' '
-    unmarshalled_message += currencies[3:] + ' '
-    unmarshalled_message += str(conversion)
-    return unmarshalled_message
+    unmarshalled_message_list.append(time)
+    unmarshalled_message_list.append(currencies[0:3])
+    unmarshalled_message_list.append(currencies[3:])
+    unmarshalled_message_list.append(conversion)
+    return unmarshalled_message_list
 
 
 # full_byte = serialize_address('127.0.0.1', 65534)
