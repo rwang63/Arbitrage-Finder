@@ -20,13 +20,13 @@ class BellmanFord(object):
         self.last_quoted[combined] = timestamp
 
         if c1 not in self.graph.keys():
-            self.graph[c1] = {c2: -log(weight)}
+            self.graph[c1] = {c2: -log(weight, 10)}
         else:
-            self.graph[c1][c2] = -log(weight)
+            self.graph[c1][c2] = -log(weight, 10)
         if c2 not in self.graph.keys():
-            self.graph[c2] = {c1: log(weight)}
+            self.graph[c2] = {c1: log(weight, 10)}
         else:
-            self.graph[c2][c1] = log(weight)
+            self.graph[c2][c1] = log(weight, 10)
 
     def remove_stale_quotes(self):
         if self.last_quoted:
@@ -84,6 +84,9 @@ class BellmanFord(object):
             negative_cycle: None if no negative cycle, otherwise an edge, (u,v),
                             in one such cycle
         """
+        # print('The graph is:')
+        # print(self.graph)
+
         negative_edge = None
 
         for vertex in self.graph.keys():

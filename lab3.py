@@ -30,7 +30,8 @@ class Lab3(object):
                                                              self.address[1])
         self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
 
-        while True:
+        # while True:
+        for _ in range(2):
             # curr1, curr2, stale =
             self.g.remove_stale_quotes()
             # if stale:
@@ -59,8 +60,30 @@ class Lab3(object):
                 print('ignoring out-of-sequence message')
 
     def detect_arbitrage(self):
-        for key in self.g.get_vertices():
+        dist = {}
+        prev = {}
+        neg_edge = None
+        arbitrage = []
+        previous_vert = None
+        vertices = self.g.get_vertices()
+        for key in vertices:
             dist, prev, neg_edge = self.g.shortest_paths(key)
+        print(neg_edge)
+        print(prev)
+        if neg_edge is not None:
+            for _ in range(len(vertices)):
+                previous_vert = prev[neg_edge[1]]
+            while True:
+                arbitrage.append(previous_vert)
+                if len(arbitrage) > 1 and previous_vert == neg_edge[1]:
+                    break
+                previous_vert = prev[previous_vert]
+            arbitrage.reverse()
+            for x in arbitrage:
+                print(x, end=' ')
+        else:
+            print('No Arbitrage')
+        print('\n')
 
 
 if __name__ == '__main__':
