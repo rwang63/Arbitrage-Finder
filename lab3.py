@@ -68,6 +68,7 @@ class Lab3(object):
         vertices = self.g.get_vertices()
         for key in vertices:
             dist, prev, neg_edge = self.g.shortest_paths(key)
+            # TODO break if you find a negative edge here?
         print(neg_edge)
         print(prev)
         if neg_edge is not None:
