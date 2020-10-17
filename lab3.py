@@ -38,7 +38,7 @@ class Lab3(object):
             #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
             data = self.listener.recv(4096)
             self.iterate_through_data(data)
-            self.g.shortest_paths()
+            self.detect_arbitrage()
 
     @staticmethod
     def start_a_server():
@@ -57,6 +57,10 @@ class Lab3(object):
                 self.g.add_to_graph(message)
             else:
                 print('ignoring out-of-sequence message')
+
+    def detect_arbitrage(self):
+        for key in self.g.get_vertices():
+            dist, prev, neg_edge = self.g.shortest_paths(key)
 
 
 if __name__ == '__main__':

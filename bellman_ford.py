@@ -4,7 +4,7 @@ from math import log
 
 class BellmanFord(object):
 
-    def __init__(self, graph=None):
+    def __init__(self):
         self.graph = {}
         self.last_quoted = {}
         self.dist = {}
@@ -45,6 +45,9 @@ class BellmanFord(object):
                     print('removing stale quote for (\'' + curr1 + '\', \''
                           + curr2 + '\')')
 
+    def get_vertices(self):
+        return self.graph.keys()
+
     def shortest_paths(self, start_vertex, tolerance=0):
         """
         Find the shortest paths (sum of edge weights) from start_vertex to every
@@ -57,21 +60,18 @@ class BellmanFord(object):
         -tolerance it is not reported as a negative cycle. This is useful when
         circuits are expected to be close to zero.
 
-        # >>> g = BellmanFord({'a': {'b': 1, 'c':5}, 'b': {'c': 2, 'a': 10},
-        #                        'c': {'a': 14, 'd': -3}, 'e': {'a': 100}})
-        # >>> dist, prev, neg_edge = g.shortest_paths('a')
-        # >>> [(v, dist[v]) for v in sorted(dist)]  # shortest distance from
-        #        'a' to each other vertex
-        # [('a', 0), ('b', 1), ('c', 3), ('d', 0), ('e', inf)]
-        # >>> [(v, prev[v]) for v in sorted(prev)]  # last edge in shortest
-        #                                               paths
-        # [('a', None), ('b', 'a'), ('c', 'b'), ('d', 'c'), ('e', None)]
-        # >>> neg_edge is None
-        # True
-        # >>> g.add_edge('a', 'e', -200)
-        # >>> dist, prev, neg_edge = g.shortest_paths('a')
-        # >>> neg_edge  # edge where we noticed a negative cycle
-        # ('e', 'a')
+        >>> g = BellmanFord({'a': {'b': 1, 'c':5}, 'b': {'c': 2, 'a': 10}, 'c': {'a': 14, 'd': -3}, 'd': {}, 'e': {'a': 100}})
+        >>> dist, prev, neg_edge = g.shortest_paths('a')
+        >>> [(v, dist[v]) for v in sorted(dist)]  # shortest distance from 'a' to each other vertex
+        [('a', 0), ('b', 1), ('c', 3), ('d', 0), ('e', inf)]
+        >>> [(v, prev[v]) for v in sorted(prev)]  # last edge in shortest paths
+        [('a', None), ('b', 'a'), ('c', 'b'), ('d', 'c'), ('e', None)]
+        >>> neg_edge is None
+        True
+        >>> bf = BellmanFord({'a': {'b': 1, 'c': 5, 'e': -200}, 'b': {'c': 2, 'a': 10}, 'c': {'a': 14, 'd': -3}, 'd': {}, 'e': {'a': 100}})
+        >>> dist, prev, neg_edge = bf.shortest_paths('a')
+        >>> neg_edge  # edge where we noticed a negative cycle
+        ('e', 'a')
 
         :param start_vertex: start of all paths
         :param tolerance: only if a path is more than tolerance better will
@@ -84,10 +84,12 @@ class BellmanFord(object):
             negative_cycle: None if no negative cycle, otherwise an edge, (u,v),
                             in one such cycle
         """
+        negative_edge = None
 
         for vertex in self.graph.keys():
             self.dist[vertex] = float("Inf")
         self.dist[start_vertex] = 0
+        self.prev[start_vertex] = None
 
         for _ in range(len(self.graph.keys()) - 1):
             for c1, edges in self.graph.items():
@@ -95,18 +97,19 @@ class BellmanFord(object):
                     if self.dist[c1] != float("Inf") and self.dist[c1] + \
                             weight < self.dist[c2]:
                         self.dist[c2] = self.dist[c1] + weight
-            # print(self.dist)
+                        self.prev[c2] = c1
+        for key in self.dist:
+            if self.dist[key] == float("Inf"):
+                self.prev[key] = None
 
         for c1, edges in self.graph.items():
             for c2, weight in edges.items():
                 if self.dist[c1] != float("Inf") and self.dist[c1] + \
                         weight < self.dist[c2]:
-                    print("Graph contains negative weight cycle")
-                    return
+                    negative_edge = (c2, c1)
 
+        # print(self.dist)
+        # print(self.prev)
+        # print(negative_edge)
 
-# if __name__ == '__main__':
-#     bf = BellmanFord(
-#         {'a': {'b': 1, 'c': 5, 'e': -200}, 'b': {'c': 2, 'a': 10},
-#         'c': {'a': 14, 'd': -3}, 'd': {}, 'e': {'a': 100}})
-#     bf.shortest_paths('a')
+        return self.dist, self.prev, negative_edge
