@@ -1,7 +1,6 @@
 import string
 from datetime import datetime, timedelta
 import struct
-import fxp_bytes
 
 MICROS_PER_SECOND = 1_000_000
 
@@ -59,4 +58,3 @@ def unmarshal_message(b: bytes) -> list:
 
 # print(unmarshal_message(b'\x00\x04\tT\xdd5@\x00GBPUSD\xbba\xdb\xa2\xcc\x86\xf3?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))
 # print(unmarshal_message(b'\x00\x04\t@\xbf]\xe0\x00USDJPY\x12\x83\xc0\xca\xa1\x11[@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))
-
