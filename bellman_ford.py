@@ -20,13 +20,13 @@ class BellmanFord(object):
         self.last_quoted[combined] = timestamp
 
         if c1 not in self.graph.keys():
-            self.graph[c1] = {c2: -log(weight, 10)}
+            self.graph[c1] = {c2: weight}
         else:
-            self.graph[c1][c2] = -log(weight, 10)
+            self.graph[c1][c2] = weight
         if c2 not in self.graph.keys():
-            self.graph[c2] = {c1: log(weight, 10)}
+            self.graph[c2] = {c1: -weight}
         else:
-            self.graph[c2][c1] = log(weight, 10)
+            self.graph[c2][c1] = -weight
 
     def remove_stale_quotes(self):
         if self.last_quoted:
@@ -48,7 +48,10 @@ class BellmanFord(object):
     def get_vertices(self):
         return self.graph.keys()
 
-    def shortest_paths(self, start_vertex, tolerance=0):
+    def get_exchange_rate(self, curr1, curr2):
+        return self.graph[curr1][curr2]
+
+    def shortest_paths(self, start_vertex, tolerance=1e-12):
         """
         Find the shortest paths (sum of edge weights) from start_vertex to every
         other vertex. Also detect if there are negative cycles and report one of
@@ -94,22 +97,40 @@ class BellmanFord(object):
         self.dist[start_vertex] = 0
         self.prev[start_vertex] = None
 
+        # loop to relax edges
         for _ in range(len(self.graph.keys()) - 1):
             for c1, edges in self.graph.items():
                 for c2, weight in edges.items():
+                    if weight > 0:
+                        weight = -log(weight, 10)
+                    else:
+                        weight = log(abs(weight), 10)
                     if self.dist[c1] != float("Inf") and self.dist[c1] + \
-                            weight < self.dist[c2]:
+                            weight < self.dist[c2] and self.dist[c1] + \
+                            weight - tolerance > 0:
                         self.dist[c2] = self.dist[c1] + weight
                         self.prev[c2] = c1
+
         for key in self.dist:
             if self.dist[key] == float("Inf"):
                 self.prev[key] = None
 
+        found = False
+
+        # loop to find negative edge
         for c1, edges in self.graph.items():
             for c2, weight in edges.items():
+                if weight > 0:
+                    weight = -log(weight, 10)
+                else:
+                    weight = log(abs(weight), 10)
                 if self.dist[c1] != float("Inf") and self.dist[c1] + \
                         weight < self.dist[c2]:
                     negative_edge = (c2, c1)
+                    found = True
+                    break
+            if found:
+                break
 
         # print(self.dist)
         # print(self.prev)

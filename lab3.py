@@ -31,15 +31,15 @@ class Lab3(object):
         self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
 
         # while True:
-        for _ in range(2):
-            # curr1, curr2, stale =
-            self.g.remove_stale_quotes()
-            # if stale:
-            #     print(
-            #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
-            data = self.listener.recv(4096)
-            self.iterate_through_data(data)
-            self.detect_arbitrage()
+        # curr1, curr2, stale =
+        self.g.remove_stale_quotes()
+        # if stale:
+        #     print(
+        #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
+        data = self.listener.recv(4096)
+        self.iterate_through_data(data)
+        arbitrage_result = self.detect_arbitrage()
+        self.print_arbitrage(arbitrage_result)
 
     @staticmethod
     def start_a_server():
@@ -64,29 +64,53 @@ class Lab3(object):
         prev = {}
         neg_edge = None
         arbitrage = []
-        previous_vert = None
         vertices = self.g.get_vertices()
+
+        # TODO: Fix this for loop
+        # TODO: Need to do something with the shortest path each time it's run
         for key in vertices:
             dist, prev, neg_edge = self.g.shortest_paths(key)
-            # TODO break if you find a negative edge here?
+
         print(neg_edge)
         print(prev)
         if neg_edge is not None:
-            for _ in range(len(vertices)):
-                previous_vert = prev[neg_edge[1]]
+            # arbitrage.append(neg_edge[1])
+            previous_vert = neg_edge[1]
             while True:
+                if len(arbitrage) > len(dist):
+                    break
                 arbitrage.append(previous_vert)
                 if len(arbitrage) > 1 and previous_vert == neg_edge[1]:
                     break
                 previous_vert = prev[previous_vert]
             arbitrage.reverse()
-            for x in arbitrage:
-                print(x, end=' ')
+            return arbitrage
         else:
-            print('No Arbitrage')
-        print('\n')
+            return None
+
+    def print_arbitrage(self, arbitrage_path):
+        print(arbitrage_path)
+        value = 100
+        if arbitrage_path is None:
+            return
+        else:
+            print('ARBITRAGE:')
+            print('\t start with', arbitrage_path[0], '100')
+            for i in range(len(arbitrage_path) - 1):
+                exchange_rate = self.g.get_exchange_rate(
+                    arbitrage_path[i], arbitrage_path[i+1])
+
+                if exchange_rate > 0:
+                    exchange_rate = exchange_rate
+                else:
+                    exchange_rate = 1 / abs(exchange_rate)
+
+                value *= exchange_rate
+                print('\t', arbitrage_path[i], 'for', arbitrage_path[i + 1],
+                      'at', exchange_rate, '-->', arbitrage_path[i + 1], value)
 
 
 if __name__ == '__main__':
     lab3 = Lab3()
     lab3.run()
+    # TODO: end after 1 minute
