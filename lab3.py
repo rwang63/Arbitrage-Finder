@@ -23,6 +23,7 @@ class Lab3(object):
     def __init__(self):
         self.listener, self.address = self.start_a_server()
         self.most_recent = datetime(1970, 1, 1)
+        self.sub_time = datetime.utcnow()
         self.g = bellman_ford.BellmanFord()
 
     def run(self):
@@ -31,20 +32,24 @@ class Lab3(object):
         self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
 
         while True:
-            # curr1, curr2, stale =
             self.g.remove_stale_quotes()
-            # if stale:
-            #     print(
-            #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
             data = self.listener.recv(4096)
             self.iterate_through_data(data)
             self.run_bellman()
+            if self.check_sub_time():
+                print('Subscription has ended')
+                break
 
     @staticmethod
     def start_a_server():
         listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         listener.bind(('localhost', 0))
         return listener, listener.getsockname()
+
+    def check_sub_time(self):
+        if (datetime.utcnow() - self.sub_time).total_seconds() > 120:
+            return True
+        return False
 
     def iterate_through_data(self, data):
         iterations = len(data) / 32
@@ -68,8 +73,8 @@ class Lab3(object):
         for key in vertices:
             dist, prev, neg_edge = self.g.shortest_paths(key)
 
-            print(neg_edge)
-            print(prev)
+            # print(neg_edge)
+            # print(prev)
             if neg_edge is not None:
                 correct_path = self.get_arbitrage_cycle(dist, prev, neg_edge)
                 if correct_path:
@@ -77,7 +82,7 @@ class Lab3(object):
 
     def get_arbitrage_cycle(self, dist, prev, neg_edge):
         # arbitrage.append(neg_edge[1])
-        print('this is the negative edge', neg_edge)
+        # print('this is the negative edge', neg_edge)
         previous_vert = neg_edge[0]
         arbitrage_path = [previous_vert]
         curr_vertex = prev[previous_vert]
@@ -96,7 +101,7 @@ class Lab3(object):
         return correct_path
 
     def print_arbitrage(self, arbitrage_path):
-        print('passed in path', arbitrage_path)
+        # print('passed in path', arbitrage_path)
         value = 100
         if arbitrage_path is None:
             return False
@@ -115,7 +120,6 @@ class Lab3(object):
                 value *= exchange_rate
                 print('\t', arbitrage_path[i], 'for', arbitrage_path[i + 1],
                       'at', exchange_rate, '-->', arbitrage_path[i + 1], value)
-
         return True
 
 

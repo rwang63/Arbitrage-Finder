@@ -158,7 +158,7 @@ class BellmanFord(object):
                     #         found = True
                     #         break
             if found:
-                print('cycle', potential_cycle)
+                # print('cycle', potential_cycle)
                 break
 
         if not found:
