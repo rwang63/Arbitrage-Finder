@@ -7,8 +7,8 @@ class BellmanFord(object):
     def __init__(self):
         self.graph = {}
         self.last_quoted = {}
-        self.dist = {}
-        self.prev = {}
+        # self.dist = {}
+        # self.prev = {}
 
     def add_to_graph(self, message):
         timestamp = message[0]
@@ -51,7 +51,7 @@ class BellmanFord(object):
     def get_exchange_rate(self, curr1, curr2):
         return self.graph[curr1][curr2]
 
-    def shortest_paths(self, start_vertex, tolerance=1e-12):
+    def shortest_paths(self, start_vertex, tolerance=0):
         """
         Find the shortest paths (sum of edge weights) from start_vertex to every
         other vertex. Also detect if there are negative cycles and report one of
@@ -91,11 +91,13 @@ class BellmanFord(object):
         # print(self.graph)
 
         negative_edge = None
+        dist = {}
+        prev = {}
 
         for vertex in self.graph.keys():
-            self.dist[vertex] = float("Inf")
-        self.dist[start_vertex] = 0
-        self.prev[start_vertex] = None
+            dist[vertex] = float("Inf")
+        dist[start_vertex] = 0
+        prev[start_vertex] = None
 
         # loop to relax edges
         for _ in range(len(self.graph.keys()) - 1):
@@ -105,15 +107,15 @@ class BellmanFord(object):
                         weight = -log(weight, 10)
                     else:
                         weight = log(abs(weight), 10)
-                    if self.dist[c1] != float("Inf") and self.dist[c1] + \
-                            weight < self.dist[c2] and self.dist[c1] + \
-                            weight - tolerance > 0:
-                        self.dist[c2] = self.dist[c1] + weight
-                        self.prev[c2] = c1
+                    if dist[c1] != float("Inf") and dist[c1] + \
+                            weight < dist[c2]:
+                        if dist[c2] - (dist[c1] + weight) >= tolerance:
+                            dist[c2] = dist[c1] + weight
+                            prev[c2] = c1
 
-        for key in self.dist:
-            if self.dist[key] == float("Inf"):
-                self.prev[key] = None
+        for key in dist:
+            if dist[key] == float("Inf"):
+                prev[key] = None
 
         found = False
 
@@ -124,16 +126,45 @@ class BellmanFord(object):
                     weight = -log(weight, 10)
                 else:
                     weight = log(abs(weight), 10)
-                if self.dist[c1] != float("Inf") and self.dist[c1] + \
-                        weight < self.dist[c2]:
+                if dist[c1] != float("Inf") and dist[c1] + \
+                        weight < dist[c2]:
+
                     negative_edge = (c2, c1)
-                    found = True
-                    break
+
+                    ending_vertex = negative_edge[0]
+
+                    potential_cycle = [ending_vertex]
+                    curr_vertex = prev[ending_vertex]
+
+                    # print(negative_edge)
+                    # print(prev)
+
+                    while True:
+                        if ending_vertex == curr_vertex:
+                            potential_cycle.append(curr_vertex)
+                            found = True
+                            break
+                        elif curr_vertex in potential_cycle:
+                            potential_cycle = []
+                            found = False
+                            break
+                        else:
+                            potential_cycle.append(curr_vertex)
+                            curr_vertex = prev[curr_vertex]
+                    # for _ in range(len(dist)):
+                    #     if ending_vertex != curr_vertex:
+                    #         curr_vertex = prev[curr_vertex]
+                    #     elif ending_vertex == curr_vertex:
+                    #         found = True
+                    #         break
             if found:
+                print('cycle', potential_cycle)
                 break
 
+        if not found:
+            negative_edge = None
         # print(self.dist)
         # print(self.prev)
         # print(negative_edge)
 
-        return self.dist, self.prev, negative_edge
+        return dist, prev, negative_edge

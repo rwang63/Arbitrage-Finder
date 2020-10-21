@@ -30,16 +30,15 @@ class Lab3(object):
                                                              self.address[1])
         self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
 
-        # while True:
-        # curr1, curr2, stale =
-        self.g.remove_stale_quotes()
-        # if stale:
-        #     print(
-        #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
-        data = self.listener.recv(4096)
-        self.iterate_through_data(data)
-        arbitrage_result = self.detect_arbitrage()
-        self.print_arbitrage(arbitrage_result)
+        while True:
+            # curr1, curr2, stale =
+            self.g.remove_stale_quotes()
+            # if stale:
+            #     print(
+            #         'removing stale quote for (' + curr1 + ', ' + curr2 + ')')
+            data = self.listener.recv(4096)
+            self.iterate_through_data(data)
+            self.run_bellman()
 
     @staticmethod
     def start_a_server():
@@ -59,40 +58,48 @@ class Lab3(object):
             else:
                 print('ignoring out-of-sequence message')
 
-    def detect_arbitrage(self):
-        dist = {}
-        prev = {}
-        neg_edge = None
-        arbitrage = []
+    def run_bellman(self):
+        # dist = {}
+        # prev = {}
+        # neg_edge = None
+
         vertices = self.g.get_vertices()
 
-        # TODO: Fix this for loop
-        # TODO: Need to do something with the shortest path each time it's run
         for key in vertices:
             dist, prev, neg_edge = self.g.shortest_paths(key)
 
-        print(neg_edge)
-        print(prev)
-        if neg_edge is not None:
-            # arbitrage.append(neg_edge[1])
-            previous_vert = neg_edge[1]
-            while True:
-                if len(arbitrage) > len(dist):
+            print(neg_edge)
+            print(prev)
+            if neg_edge is not None:
+                correct_path = self.get_arbitrage_cycle(dist, prev, neg_edge)
+                if correct_path:
                     break
-                arbitrage.append(previous_vert)
-                if len(arbitrage) > 1 and previous_vert == neg_edge[1]:
-                    break
-                previous_vert = prev[previous_vert]
-            arbitrage.reverse()
-            return arbitrage
-        else:
-            return None
+
+    def get_arbitrage_cycle(self, dist, prev, neg_edge):
+        # arbitrage.append(neg_edge[1])
+        print('this is the negative edge', neg_edge)
+        previous_vert = neg_edge[0]
+        arbitrage_path = [previous_vert]
+        curr_vertex = prev[previous_vert]
+        while True:
+            if previous_vert == curr_vertex:
+                arbitrage_path.append(curr_vertex)
+                break
+            elif curr_vertex in arbitrage_path:
+                break
+            else:
+                arbitrage_path.append(curr_vertex)
+                curr_vertex = prev[curr_vertex]
+
+        arbitrage_path.reverse()
+        correct_path = self.print_arbitrage(arbitrage_path)
+        return correct_path
 
     def print_arbitrage(self, arbitrage_path):
-        print(arbitrage_path)
+        print('passed in path', arbitrage_path)
         value = 100
         if arbitrage_path is None:
-            return
+            return False
         else:
             print('ARBITRAGE:')
             print('\t start with', arbitrage_path[0], '100')
@@ -109,8 +116,9 @@ class Lab3(object):
                 print('\t', arbitrage_path[i], 'for', arbitrage_path[i + 1],
                       'at', exchange_rate, '-->', arbitrage_path[i + 1], value)
 
+        return True
+
 
 if __name__ == '__main__':
     lab3 = Lab3()
     lab3.run()
-    # TODO: end after 1 minute
