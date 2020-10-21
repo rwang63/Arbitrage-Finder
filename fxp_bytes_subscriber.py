@@ -1,3 +1,9 @@
+"""
+CPSC 5520, Seattle University
+This is free and unencumbered software released into the public domain.
+:Author: Ruifeng Wang
+:Version: Fall2020
+"""
 import string
 from datetime import datetime, timedelta
 import struct
@@ -6,23 +12,37 @@ MICROS_PER_SECOND = 1_000_000
 
 
 def serialize_address(ip: string, port: int) -> bytes:
+    """
+    Converts an IP address (string) and port (int) into a byte stream to send to
+    the publisher.
+    :param ip: IP address to be converted
+    :param port: Port number to be converted
+    :return: bytes to be sent to the publisher
+    """
     ip_as_bytes = bytes(map(int, ip.split('.')))
     port_as_bytes = struct.pack('>H', port)
 
     full_byte = ip_as_bytes + port_as_bytes
 
-    # print(ip_as_bytes)
-    # print(port_as_bytes)
-
     return full_byte
 
 
 def deserialize_price(b: bytes) -> float:
+    """
+    Deserializes the exchange rate from bytes to a float
+    :param b: byte sequence of conversion rate
+    :return: conversion rate as a float
+    """
     p = struct.unpack('<d', b)
     return p[0]
 
 
 def deserialize_utcdatetime(b: bytes) -> datetime:
+    """
+    Deserializes a UTC datetime from a byte stream into a datetime
+    :param b: byte sequence of UTC datetime
+    :return: datetime timestamp
+    """
     epoch = datetime(1970, 1, 1)
     p = struct.unpack('>Q', b)
     microseconds = p[0]
@@ -32,6 +52,12 @@ def deserialize_utcdatetime(b: bytes) -> datetime:
 
 
 def unmarshal_message(b: bytes) -> list:
+    """
+    Combines all parts of the unmarshalled message together from bytes into
+    a list
+    :param b: byte stream of a quote
+    :return: list form of a message
+    """
     unmarshalled_message_list = []
     time = deserialize_utcdatetime(b[0:8])
     currencies = b[8:14].decode("utf-8")
@@ -41,20 +67,3 @@ def unmarshal_message(b: bytes) -> list:
     unmarshalled_message_list.append(currencies[3:])
     unmarshalled_message_list.append(conversion)
     return unmarshalled_message_list
-
-
-# full_byte = serialize_address('127.0.0.1', 65534)
-#
-# print(fxp_bytes.deserialize_address(full_byte))
-
-# print('Original number: ' + str(9006104071832581.0))
-# p = deserialize_price(b'\x05\x04\x03\x02\x01\xff?C')
-# print('Deserialized: ' + str(p))
-# print('Serialized: ' + str(fxp_bytes.serialize_price(9006104071832581.0)))
-# print('Serialized (after deserialized): ' + str(fxp_bytes.serialize_price(p)))
-
-# print(fxp_bytes.serialize_utcdatetime(datetime(1971, 12, 10, 1, 2, 3, 64000)))
-# print(deserialize_utcdatetime(b'\x00\x007\xa3e\x8e\xf2\xc0'))
-
-# print(unmarshal_message(b'\x00\x04\tT\xdd5@\x00GBPUSD\xbba\xdb\xa2\xcc\x86\xf3?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))
-# print(unmarshal_message(b'\x00\x04\t@\xbf]\xe0\x00USDJPY\x12\x83\xc0\xca\xa1\x11[@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))

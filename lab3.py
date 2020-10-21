@@ -1,7 +1,10 @@
 """
-This is the main entry point into the program
-Need to call Bellman-Ford and subscriber here
+CPSC 5520, Seattle University
+This is free and unencumbered software released into the public domain.
+:Author: Ruifeng Wang
+:Version: Fall2020
 """
+
 import socket
 from datetime import datetime
 
@@ -10,6 +13,11 @@ import bellman_ford
 
 
 def display_quote(message):
+    """
+    Takes in a quote as a list and parses it into a string
+    :param message: list form of quote
+    :return: quote as a string
+    """
     message_string = ''
     message_string += str(message[0]) + ' '
     message_string += message[1] + ' '
@@ -19,39 +27,51 @@ def display_quote(message):
 
 
 class Lab3(object):
+    """
 
+    """
     def __init__(self):
+        """
+        Constructs a lab 3 object
+        """
         self.listener, self.address = self.start_a_server()
         self.most_recent = datetime(1970, 1, 1)
         self.sub_time = datetime.utcnow()
         self.g = bellman_ford.BellmanFord()
 
     def run(self):
+        """
+        Loops to run program while connected to publisher
+        :return: None
+        """
         byte_stream = fxp_bytes_subscriber.serialize_address(self.address[0],
                                                              self.address[1])
-        self.listener.sendto(byte_stream, ('127.0.0.1', 63000))
+        self.listener.sendto(byte_stream, ('127.0.0.1', 63000)) # TODO: Change this to 50403 before turning in
 
         while True:
             self.g.remove_stale_quotes()
             data = self.listener.recv(4096)
             self.iterate_through_data(data)
             self.run_bellman()
-            if self.check_sub_time():
-                print('Subscription has ended')
-                break
 
     @staticmethod
     def start_a_server():
+        """
+        Creates a connection with the server
+        :return: socket and socket address tuple
+        """
         listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         listener.bind(('localhost', 0))
         return listener, listener.getsockname()
 
-    def check_sub_time(self):
-        if (datetime.utcnow() - self.sub_time).total_seconds() > 120:
-            return True
-        return False
-
     def iterate_through_data(self, data):
+        """
+        Iterates through the received quote, unmarshalling, printing and
+        adding the quote to the graph as appropriate
+        Ignores quotes that are sent out of sequence
+        :param data: Quote directly from publisher
+        :return: None
+        """
         iterations = len(data) / 32
         for i in range(int(iterations)):
             message = fxp_bytes_subscriber.unmarshal_message(
@@ -64,6 +84,11 @@ class Lab3(object):
                 print('ignoring out-of-sequence message')
 
     def run_bellman(self):
+        """
+        Runs the Bellman-Ford algorithm from each vertex until a negative
+        cycle is found or all vertices have been cycled through
+        :return: None
+        """
         # dist = {}
         # prev = {}
         # neg_edge = None
@@ -81,6 +106,14 @@ class Lab3(object):
                     break
 
     def get_arbitrage_cycle(self, dist, prev, neg_edge):
+        """
+        Starts from the negative edge and navigates backwards to find the
+        negative cycle
+        :param dist: Shortest distance to each vertex from starting vertex
+        :param prev: Keeps track of current vertex and parent
+        :param neg_edge: An edge in the negative cycle
+        :return:
+        """
         # arbitrage.append(neg_edge[1])
         # print('this is the negative edge', neg_edge)
         previous_vert = neg_edge[0]
@@ -101,6 +134,12 @@ class Lab3(object):
         return correct_path
 
     def print_arbitrage(self, arbitrage_path):
+        """
+        Takes in the arbitrage path and prints the result.
+        Does the calculation of conversions along the way
+        :param arbitrage_path: List of vertices in the arbitrage opportunity
+        :return:
+        """
         # print('passed in path', arbitrage_path)
         value = 100
         if arbitrage_path is None:
@@ -124,5 +163,9 @@ class Lab3(object):
 
 
 if __name__ == '__main__':
+    """
+    Main entry point into the program
+    Creates a Lab3 object and runs
+    """
     lab3 = Lab3()
     lab3.run()

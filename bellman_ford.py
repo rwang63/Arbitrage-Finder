@@ -1,16 +1,35 @@
+"""
+CPSC 5520, Seattle University
+This is free and unencumbered software released into the public domain.
+:Author: Ruifeng Wang
+:Version: Fall2020
+"""
 from datetime import datetime
 from math import log
 
 
 class BellmanFord(object):
+    """
 
+    """
     def __init__(self):
+        """
+        Constructs a BellmanFord object that contains all the properties to
+        store a graph and run the Bellman-Ford algorithm
+        :param self:
+        :return:
+        """
         self.graph = {}
         self.last_quoted = {}
         # self.dist = {}
         # self.prev = {}
 
     def add_to_graph(self, message):
+        """
+        Deciphers and adds a quote to the graph
+        :param message: Quote to be added to graph (list format)
+        :return: None
+        """
         timestamp = message[0]
         c1 = message[1]
         c2 = message[2]
@@ -29,6 +48,10 @@ class BellmanFord(object):
             self.graph[c2][c1] = -weight
 
     def remove_stale_quotes(self):
+        """
+        Removes stale quotes (older than 1.5 seconds) from the graph
+        :return: None
+        """
         if self.last_quoted:
             for key, value in list(self.last_quoted.items()):
                 if (datetime.utcnow() - value).total_seconds() > 1.5:
@@ -46,9 +69,19 @@ class BellmanFord(object):
                           + curr2 + '\')')
 
     def get_vertices(self):
+        """
+        Returns all vertices of the graph
+        :return: All vertices of the graph
+        """
         return self.graph.keys()
 
     def get_exchange_rate(self, curr1, curr2):
+        """
+        Gets the exchange rate (edge) between curr1 to curr2
+        :param curr1: First currency
+        :param curr2: Second currency
+        :return: Exchange rate (edge) between the two currencies
+        """
         return self.graph[curr1][curr2]
 
     def shortest_paths(self, start_vertex, tolerance=0):
