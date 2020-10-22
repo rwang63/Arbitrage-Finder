@@ -10,7 +10,12 @@ from math import log
 
 class BellmanFord(object):
     """
-
+    The BellmanFord object stores a graph constructed with quotes of conversions
+    from one currency to another. There is a function to run the Bellman-Ford
+    algorithm, which finds the shortest paths from a starting vertex to every
+    other vertex and additionally will detect if there is a negative cycle.
+    Additionally, it is checked if the negative edge is included in a cycle
+    that leads back to the original currency.
     """
     def __init__(self):
         """
@@ -19,10 +24,8 @@ class BellmanFord(object):
         :param self:
         :return:
         """
-        self.graph = {}
-        self.last_quoted = {}
-        # self.dist = {}
-        # self.prev = {}
+        self.graph = {}  # Stores the graph
+        self.last_quoted = {}  # Keeps tracks of when the quote was added
 
     def add_to_graph(self, message):
         """
@@ -34,10 +37,14 @@ class BellmanFord(object):
         c1 = message[1]
         c2 = message[2]
         weight = message[3]
-        combined = c1 + c2
+        combined = (c1, c2)
 
         self.last_quoted[combined] = timestamp
 
+        # Storing the weight without converting using log base 10
+        # The conversion is done in the Bellman-Ford algorithm
+        # Reasoning is to know which direction I'm heading on the currency graph
+        # Positive is from c1 to c2, negative is from c2 to c1
         if c1 not in self.graph.keys():
             self.graph[c1] = {c2: weight}
         else:
@@ -55,11 +62,12 @@ class BellmanFord(object):
         if self.last_quoted:
             for key, value in list(self.last_quoted.items()):
                 if (datetime.utcnow() - value).total_seconds() > 1.5:
-                    curr1 = key[0:3]
-                    curr2 = key[3:6]
+                    curr1 = key[0]
+                    curr2 = key[1]
 
                     del self.last_quoted[key]
-
+                    # Was getting key error when trying to remove from the graph
+                    # but this try-except solved it
                     try:
                         del self.graph[curr1][curr2]
                         del self.graph[curr2][curr1]
@@ -84,7 +92,7 @@ class BellmanFord(object):
         """
         return self.graph[curr1][curr2]
 
-    def shortest_paths(self, start_vertex, tolerance=0):
+    def shortest_paths(self, start_vertex, tolerance=0.0001):
         """
         Find the shortest paths (sum of edge weights) from start_vertex to every
         other vertex. Also detect if there are negative cycles and report one of
@@ -119,23 +127,28 @@ class BellmanFord(object):
                             shortest path from start_vertex
             negative_cycle: None if no negative cycle, otherwise an edge, (u,v),
                             in one such cycle
+            cycle: The vertices in the negative cycle, in reverse order
         """
-        # print('The graph is:')
-        # print(self.graph)
 
         negative_edge = None
         dist = {}
         prev = {}
 
+        # Start by initializing the dist to all vertices as infinity
         for vertex in self.graph.keys():
             dist[vertex] = float("Inf")
-        dist[start_vertex] = 0
-        prev[start_vertex] = None
+        dist[start_vertex] = 0  # Distance from start to itself is 0
+        prev[start_vertex] = None  # Predecessor of start vertex is None
 
-        # loop to relax edges
+        # This relaxes the edges, finding the shortest distance from the
+        # start vertex to every other vertex (stored in dist)
         for _ in range(len(self.graph.keys()) - 1):
             for c1, edges in self.graph.items():
                 for c2, weight in edges.items():
+                    # If the weight is greater than 0, then we are going from c1
+                    # to c2, so we use -log base 10, otherwise we are going from
+                    # c2 to c1 and use log base 10 (must take absolute value of
+                    # the weight since we stored the -)
                     if weight > 0:
                         weight = -log(weight, 10)
                     else:
@@ -151,10 +164,16 @@ class BellmanFord(object):
                 prev[key] = None
 
         found = False
+        potential_cycle = []
 
-        # loop to find negative edge
+        # Additional step to find if a negative edge exists
         for c1, edges in self.graph.items():
             for c2, weight in edges.items():
+                potential_cycle.clear()
+                # If the weight is greater than 0, then we are going from c1
+                # to c2, so we use -log base 10, otherwise we are going from
+                # c2 to c1 and use log base 10 (must take absolute value of
+                # the weight since we stored the -)
                 if weight > 0:
                     weight = -log(weight, 10)
                 else:
@@ -169,35 +188,27 @@ class BellmanFord(object):
                     potential_cycle = [ending_vertex]
                     curr_vertex = prev[ending_vertex]
 
-                    # print(negative_edge)
-                    # print(prev)
-
+                    # This loop checks if the negative edge is a part of
+                    # a cycle according to the prev
+                    # If it is, the found variable is flipped to True
                     while True:
                         if ending_vertex == curr_vertex:
                             potential_cycle.append(curr_vertex)
                             found = True
                             break
                         elif curr_vertex in potential_cycle:
-                            potential_cycle = []
                             found = False
                             break
                         else:
                             potential_cycle.append(curr_vertex)
                             curr_vertex = prev[curr_vertex]
-                    # for _ in range(len(dist)):
-                    #     if ending_vertex != curr_vertex:
-                    #         curr_vertex = prev[curr_vertex]
-                    #     elif ending_vertex == curr_vertex:
-                    #         found = True
-                    #         break
+            # Found the cycle
             if found:
-                # print('cycle', potential_cycle)
                 break
-
+        # Did not find the cycle, so we will mark negative_edge as None and
+        # and empty the cycle
         if not found:
             negative_edge = None
-        # print(self.dist)
-        # print(self.prev)
-        # print(negative_edge)
+            potential_cycle.clear()
 
-        return dist, prev, negative_edge
+        return dist, prev, negative_edge, potential_cycle

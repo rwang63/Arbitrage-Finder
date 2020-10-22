@@ -28,13 +28,19 @@ def display_quote(message):
 
 class Lab3(object):
     """
-
+    This program allows us to connect with a publisher as a subscriber and
+    continuously receive UDP datagrams. These datagrams contain currency
+    conversion quotes. Using these quotes, we store them in a graph and run
+    Bellman-Ford at each update to check if there is an arbitrage opportunity.
+    (Converting currencies and ending up at the original currency with more
+    money than you started with.) If an arbitrage opportunity presents itself,
+    we report it, otherwise we continue to receive messages from the publisher.
     """
     def __init__(self):
         """
         Constructs a lab 3 object
         """
-        self.listener, self.address = self.start_a_server()
+        self.listener, self.address = self.start()
         self.most_recent = datetime(1970, 1, 1)
         self.sub_time = datetime.utcnow()
         self.g = bellman_ford.BellmanFord()
@@ -44,9 +50,11 @@ class Lab3(object):
         Loops to run program while connected to publisher
         :return: None
         """
+
+        # Serialize address before sending to publisher
         byte_stream = fxp_bytes_subscriber.serialize_address(self.address[0],
                                                              self.address[1])
-        self.listener.sendto(byte_stream, ('127.0.0.1', 63000)) # TODO: Change this to 50403 before turning in
+        self.listener.sendto(byte_stream, ('127.0.0.1', 50403))
 
         while True:
             self.g.remove_stale_quotes()
@@ -55,7 +63,7 @@ class Lab3(object):
             self.run_bellman()
 
     @staticmethod
-    def start_a_server():
+    def start():
         """
         Creates a connection with the server
         :return: socket and socket address tuple
@@ -72,6 +80,8 @@ class Lab3(object):
         :param data: Quote directly from publisher
         :return: None
         """
+        # Can be more than 1 quote per message, and each quote is 32 bytes
+        # So need to find out how many iterations you need to decode
         iterations = len(data) / 32
         for i in range(int(iterations)):
             message = fxp_bytes_subscriber.unmarshal_message(
@@ -89,77 +99,40 @@ class Lab3(object):
         cycle is found or all vertices have been cycled through
         :return: None
         """
-        # dist = {}
-        # prev = {}
-        # neg_edge = None
-
         vertices = self.g.get_vertices()
 
+        # Runs Bellman-Ford starting from every vertex in the graph looking for
+        # an arbitrage opportunity
+        # If one is found and a cycle is returned, we print it and stop
         for key in vertices:
-            dist, prev, neg_edge = self.g.shortest_paths(key)
+            dist, prev, neg_edge, cycle = self.g.shortest_paths(key)
 
-            # print(neg_edge)
-            # print(prev)
-            if neg_edge is not None:
-                correct_path = self.get_arbitrage_cycle(dist, prev, neg_edge)
-                if correct_path:
-                    break
-
-    def get_arbitrage_cycle(self, dist, prev, neg_edge):
-        """
-        Starts from the negative edge and navigates backwards to find the
-        negative cycle
-        :param dist: Shortest distance to each vertex from starting vertex
-        :param prev: Keeps track of current vertex and parent
-        :param neg_edge: An edge in the negative cycle
-        :return:
-        """
-        # arbitrage.append(neg_edge[1])
-        # print('this is the negative edge', neg_edge)
-        previous_vert = neg_edge[0]
-        arbitrage_path = [previous_vert]
-        curr_vertex = prev[previous_vert]
-        while True:
-            if previous_vert == curr_vertex:
-                arbitrage_path.append(curr_vertex)
+            if len(cycle) > 0:
+                cycle.reverse()
+                self.print_arbitrage(cycle)
                 break
-            elif curr_vertex in arbitrage_path:
-                break
-            else:
-                arbitrage_path.append(curr_vertex)
-                curr_vertex = prev[curr_vertex]
-
-        arbitrage_path.reverse()
-        correct_path = self.print_arbitrage(arbitrage_path)
-        return correct_path
 
     def print_arbitrage(self, arbitrage_path):
         """
         Takes in the arbitrage path and prints the result.
         Does the calculation of conversions along the way
         :param arbitrage_path: List of vertices in the arbitrage opportunity
-        :return:
         """
-        # print('passed in path', arbitrage_path)
         value = 100
-        if arbitrage_path is None:
-            return False
-        else:
-            print('ARBITRAGE:')
-            print('\t start with', arbitrage_path[0], '100')
-            for i in range(len(arbitrage_path) - 1):
-                exchange_rate = self.g.get_exchange_rate(
-                    arbitrage_path[i], arbitrage_path[i+1])
+        print('ARBITRAGE:')
+        print('\t start with', arbitrage_path[0], '100')
+        for i in range(len(arbitrage_path) - 1):
+            exchange_rate = self.g.get_exchange_rate(
+                arbitrage_path[i], arbitrage_path[i+1])
 
-                if exchange_rate > 0:
-                    exchange_rate = exchange_rate
-                else:
-                    exchange_rate = 1 / abs(exchange_rate)
+            if exchange_rate > 0:
+                exchange_rate = exchange_rate
+            else:
+                exchange_rate = 1 / abs(exchange_rate)
 
-                value *= exchange_rate
-                print('\t', arbitrage_path[i], 'for', arbitrage_path[i + 1],
-                      'at', exchange_rate, '-->', arbitrage_path[i + 1], value)
-        return True
+            value *= exchange_rate
+            print('\t', arbitrage_path[i], 'for', arbitrage_path[i + 1],
+                  'at', exchange_rate, '-->', arbitrage_path[i + 1], value)
 
 
 if __name__ == '__main__':
